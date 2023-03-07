@@ -27,7 +27,7 @@ pub mod communication_base {
 
         #[ink(message)]
         pub fn get_data_from_contract(&self, target_contract:AccountId, target_function:String) -> Vec<Vec<u8>> {
-            let mut instance: DefaultContractRef = ink::env::call::FromAccountId::from_account_id(target_contract);
+            let instance: DefaultContractRef = ink::env::call::FromAccountId::from_account_id(target_contract);
             instance.get_data(target_function)
         }
 

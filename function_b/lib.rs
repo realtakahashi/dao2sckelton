@@ -10,7 +10,8 @@ mod function_b {
     use ink::storage::traits::StorageLayout;
     use openbrush::storage::Mapping;
     use contract_helper::traits::types::types::*;
-    use scale::Encode;
+    use scale::{Encode, Decode};
+    use communication_base::communication_base::{CommunicationBase, CommunicationBaseRef};
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -23,6 +24,7 @@ mod function_b {
         dao_address: Option<AccountId>,
         command_list: Vec<String>,
         next_id: u128,
+        communication_base_address: AccountId,
     }
 
     impl ContractBase for FunctionB {
@@ -87,7 +89,7 @@ mod function_b {
     impl FunctionB {
         /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
+        pub fn new(init_value: bool, communication_base_address: AccountId) -> Self {
             Self {
                 value: init_value,
                 list_of_b: Mapping::default(),
@@ -100,15 +102,8 @@ mod function_b {
                 ]
                 .to_vec(),
                 next_id: 0,
+                communication_base_address: communication_base_address,
             }
-        }
-
-        /// Constructor that initializes the `bool` value to `false`.
-        ///
-        /// Constructors can delegate to other constructors.
-        #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
         }
 
         /// A message that can be called on instantiated contracts.
@@ -133,6 +128,21 @@ mod function_b {
                     Some(value) => return_value.push(value),
                     None => (),
                 }
+            }
+            return_value
+        }
+
+        #[ink(message)]
+        pub fn get_functiona_value(&self, function_a_address:AccountId) -> Vec<AInfo> {
+            let instance: CommunicationBaseRef = ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
+            let get_value:Vec<Vec<u8>> = instance.get_data_from_contract(function_a_address,"get_list_of_a_value".to_string());
+            let mut return_value:Vec<AInfo> = Vec::new();
+            for value in get_value.iter(){
+                let array_value:&[u8] = value.as_slice().try_into().unwrap();
+                match AInfo::decode(&mut array_value.clone()){
+                    Ok(value) => return_value.push(value),
+                    Err(_) => (),
+                };
             }
             return_value
         }
