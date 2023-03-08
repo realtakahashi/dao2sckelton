@@ -49,7 +49,7 @@ pub mod default_contract {
         fn _function_calling_switch(
             &mut self,
             command: String,
-            vec_of_parameters: Vec<String>,
+            _vec_of_parameters: Vec<String>,
         ) -> core::result::Result<(), ContractBaseError> {
             match command.as_str() {
                 "test_function" => self._test_function(),

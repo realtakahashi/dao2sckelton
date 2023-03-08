@@ -4,14 +4,14 @@ pub use self::function_b::{FunctionB, FunctionBRef};
 
 #[openbrush::contract]
 mod function_b {
+    use communication_base::communication_base::{CommunicationBase, CommunicationBaseRef};
     use contract_helper::traits::contract_base::contract_base::*;
+    use contract_helper::traits::types::types::*;
     use ink::prelude::string::{String, ToString};
     use ink::prelude::vec::Vec;
     use ink::storage::traits::StorageLayout;
     use openbrush::storage::Mapping;
-    use contract_helper::traits::types::types::*;
-    use scale::{Encode, Decode};
-    use communication_base::communication_base::{CommunicationBase, CommunicationBaseRef};
+    use scale::{Decode, Encode};
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -45,15 +45,15 @@ mod function_b {
         }
 
         #[ink(message)]
-        fn get_data(&self,target_function:String) -> Vec<Vec<u8>> {
+        fn get_data(&self, target_function: String) -> Vec<Vec<u8>> {
             let mut result: Vec<Vec<u8>> = Vec::new();
             match target_function.as_str() {
                 "get_list_of_b_value" => {
-                    let list:Vec<BInfo> = self.get_list_of_b_value();
+                    let list: Vec<BInfo> = self.get_list_of_b_value();
                     for value in list.iter() {
                         result.push(value.encode());
                     }
-                },
+                }
                 _ => (),
             }
             result
@@ -122,7 +122,7 @@ mod function_b {
 
         #[ink(message)]
         pub fn get_list_of_b_value(&self) -> Vec<BInfo> {
-            let mut return_value:Vec<BInfo> = Vec::new();
+            let mut return_value: Vec<BInfo> = Vec::new();
             for i in 0..self.next_id {
                 match self.list_of_b.get(&i) {
                     Some(value) => return_value.push(value),
@@ -133,13 +133,30 @@ mod function_b {
         }
 
         #[ink(message)]
-        pub fn get_functiona_value(&self, function_a_address:AccountId) -> Vec<AInfo> {
-            let instance: CommunicationBaseRef = ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
-            let get_value:Vec<Vec<u8>> = instance.get_data_from_contract(function_a_address,"get_list_of_a_value".to_string());
-            let mut return_value:Vec<AInfo> = Vec::new();
-            for value in get_value.iter(){
-                let array_value:&[u8] = value.as_slice().try_into().unwrap();
-                match AInfo::decode(&mut array_value.clone()){
+        pub fn add_function_a_value(
+            &mut self,
+            function_a_address: AccountId,
+        ) -> core::result::Result<(), ContractBaseError> {
+            let caller_string = "ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8".to_string();
+            let mut instance: CommunicationBaseRef =
+                ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
+            instance.call_execute_interface_of_function(
+                function_a_address,
+                "test_a1_function".to_string(),
+                "functiona1,test,".to_string() + &caller_string,
+            )
+        }
+
+        #[ink(message)]
+        pub fn get_functiona_value(&self, function_a_address: AccountId) -> Vec<AInfo> {
+            let instance: CommunicationBaseRef =
+                ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
+            let get_value: Vec<Vec<u8>> = instance
+                .get_data_from_contract(function_a_address, "get_list_of_a_value".to_string());
+            let mut return_value: Vec<AInfo> = Vec::new();
+            for value in get_value.iter() {
+                let array_value: &[u8] = value.as_slice().try_into().unwrap();
+                match AInfo::decode(&mut array_value.clone()) {
                     Ok(value) => return_value.push(value),
                     Err(_) => (),
                 };
