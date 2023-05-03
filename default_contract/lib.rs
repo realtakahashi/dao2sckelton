@@ -71,6 +71,16 @@ pub mod default_contract {
             }
         }
 
+        #[ink(message)]
+        pub fn extarnal_get_data_interface(&self,target_function:String) -> Vec<Vec<u8>> {
+            self.get_data(target_function)
+        }
+
+        #[ink(message)]
+        pub fn extarnal_execute_interface(&mut self, command:String, parameters_csv:String) -> core::result::Result<(), ContractBaseError>{
+            self._execute_interface(command, parameters_csv)
+        }
+
         fn _test_function(&self) -> core::result::Result<(), ContractBaseError> {
             ink::env::debug_println!("########## source caller ############### value is {:?}", self.env().caller());
             Ok(())

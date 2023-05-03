@@ -17,15 +17,6 @@ pub type ContractBaseRef = dyn ContractBase;
 pub trait ContractBase {
 
     #[ink(message)]
-    fn execute_interface(&mut self, command:String, parameters_csv:String) -> core::result::Result<(), ContractBaseError>{
-        let command_list = self._get_command_list();
-        if command_list.iter().filter(|item| *item == &command).collect::<Vec<&String>>().len() == 0{
-            return Err(ContractBaseError::CommnadNotFound);
-        }
-        self._execute_interface(command, parameters_csv)
-    }
-
-    #[ink(message)]
     fn set_dao_address(
         &mut self,
         dao_address:AccountId,
@@ -37,6 +28,14 @@ pub trait ContractBase {
     }
 
     fn _execute_interface(&mut self, command:String, parameters_csv:String) -> core::result::Result<(), ContractBaseError>{
+        let command_list = self._get_command_list();
+        if command_list.iter().filter(|item| *item == &command).collect::<Vec<&String>>().len() == 0{
+            return Err(ContractBaseError::CommnadNotFound);
+        }
+        self._execute_interface_impl(command, parameters_csv)
+    }
+
+    fn _execute_interface_impl(&mut self, command:String, parameters_csv:String) -> core::result::Result<(), ContractBaseError>{
         let vec_of_parameters: Vec<String> = match parameters_csv.find(',') {
             Some(_index) => parameters_csv
                 .split(',')
@@ -57,7 +56,7 @@ pub trait ContractBase {
             None => false,
         }
     }
-
+    
     #[ink(message)]
     fn get_data(&self,target_function:String) -> Vec<Vec<u8>>;
 

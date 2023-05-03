@@ -4,7 +4,7 @@ pub use self::function_b::{FunctionB, FunctionBRef};
 
 #[openbrush::contract]
 mod function_b {
-    use communication_base::communication_base::{CommunicationBase, CommunicationBaseRef};
+    // use communication_base::communication_base::{CommunicationBase, CommunicationBaseRef};
     use contract_helper::traits::contract_base::contract_base::*;
     use contract_helper::traits::types::types::*;
     use ink::prelude::string::{String, ToString};
@@ -12,6 +12,7 @@ mod function_b {
     use ink::storage::traits::StorageLayout;
     use openbrush::storage::Mapping;
     use scale::{Decode, Encode};
+    use default_contract::default_contract::{DefaultContract, DefaultContractRef};
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -24,7 +25,7 @@ mod function_b {
         dao_address: Option<AccountId>,
         command_list: Vec<String>,
         next_id: u128,
-        communication_base_address: AccountId,
+        // communication_base_address: AccountId,
     }
 
     impl ContractBase for FunctionB {
@@ -89,7 +90,8 @@ mod function_b {
     impl FunctionB {
         /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
-        pub fn new(init_value: bool, communication_base_address: AccountId) -> Self {
+        // pub fn new(init_value: bool, communication_base_address: AccountId) -> Self {
+        pub fn new(init_value: bool) -> Self {
             Self {
                 value: init_value,
                 list_of_b: Mapping::default(),
@@ -102,8 +104,18 @@ mod function_b {
                 ]
                 .to_vec(),
                 next_id: 0,
-                communication_base_address: communication_base_address,
+                // communication_base_address: communication_base_address,
             }
+        }
+
+        #[ink(message)]
+        pub fn extarnal_get_data_interface(&self,target_function:String) -> Vec<Vec<u8>> {
+            self.get_data(target_function)
+        }
+
+        #[ink(message)]
+        pub fn extarnal_execute_interface(&mut self, command:String, parameters_csv:String) -> core::result::Result<(), ContractBaseError>{
+            self._execute_interface(command, parameters_csv)
         }
 
         /// A message that can be called on instantiated contracts.
@@ -133,26 +145,43 @@ mod function_b {
         }
 
         #[ink(message)]
+        pub fn call_other_contract(&mut self, target_contract :AccountId, target_function:String,parameters_csv:String) -> core::result::Result<(), ContractBaseError>{
+            let mut instance: DefaultContractRef =
+                ink::env::call::FromAccountId::from_account_id(target_contract);
+            instance.extarnal_execute_interface(target_function, parameters_csv)
+        }
+
+        #[ink(message)]
         pub fn add_function_a_value(
             &mut self,
             function_a_address: AccountId,
         ) -> core::result::Result<(), ContractBaseError> {
             let caller_string = "ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8".to_string();
-            let mut instance: CommunicationBaseRef =
-                ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
-            instance.call_execute_interface_of_function(
-                function_a_address,
-                "test_a1_function".to_string(),
-                "functiona1,test,".to_string() + &caller_string,
-            )
+
+            let mut instance: DefaultContractRef =
+                ink::env::call::FromAccountId::from_account_id(function_a_address);
+            instance.extarnal_execute_interface("test_a1_function".to_string(), "functiona1,test,".to_string() + &caller_string)
+
+            // let mut instance: CommunicationBaseRef =
+            //     ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
+            // instance.call_execute_interface_of_function(
+            //     function_a_address,
+            //     "test_a1_function".to_string(),
+            //     "functiona1,test,".to_string() + &caller_string,
+            // )
         }
 
         #[ink(message)]
         pub fn get_functiona_value(&self, function_a_address: AccountId) -> Vec<AInfo> {
-            let instance: CommunicationBaseRef =
-                ink::env::call::FromAccountId::from_account_id(self.communication_base_address);
-            let get_value: Vec<Vec<u8>> = instance
-                .get_data_from_contract(function_a_address, "get_list_of_a_value".to_string());
+            // let instance: CommunicationBaseRef =
+            //     ink::env::call::FromAccountId::from_account_id(self.communication_base_address);                
+            // let get_value: Vec<Vec<u8>> = instance
+            //     .get_data_from_contract(function_a_address, "get_list_of_a_value".to_string());
+
+            let instance: DefaultContractRef =
+            ink::env::call::FromAccountId::from_account_id(function_a_address);
+            let get_value: Vec<Vec<u8>> = instance.extarnal_get_data_interface("get_list_of_a_value".to_string());
+
             let mut return_value: Vec<AInfo> = Vec::new();
             for value in get_value.iter() {
                 let array_value: &[u8] = value.as_slice().try_into().unwrap();
